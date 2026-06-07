@@ -1,0 +1,186 @@
+import { useState, useMemo } from "react";
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from "recharts";
+
+const rawData = [
+  { month: "Jan", sales: 42000, revenue: 58000, product: "Laptop", region: "North", units: 210 },
+  { month: "Feb", sales: 38000, revenue: 52000, product: "Phone", region: "South", units: 180 },
+  { month: "Mar", sales: 55000, revenue: 71000, product: "Tablet", region: "East", units: 270 },
+  { month: "Apr", sales: 61000, revenue: 83000, product: "Laptop", region: "West", units: 310 },
+  { month: "May", sales: 47000, revenue: 64000, product: "Phone", region: "North", units: 240 },
+  { month: "Jun", sales: 69000, revenue: 91000, product: "Tablet", region: "South", units: 350 },
+  { month: "Jul", sales: 73000, revenue: 98000, product: "Laptop", region: "East", units: 370 },
+  { month: "Aug", sales: 58000, revenue: 77000, product: "Phone", region: "West", units: 290 },
+  { month: "Sep", sales: 82000, revenue: 109000, product: "Tablet", region: "North", units: 410 },
+  { month: "Oct", sales: 91000, revenue: 121000, product: "Laptop", region: "South", units: 455 },
+  { month: "Nov", sales: 104000, revenue: 138000, product: "Phone", region: "East", units: 520 },
+  { month: "Dec", sales: 118000, revenue: 157000, product: "Tablet", region: "West", units: 590 },
+];
+
+const productColors = { Laptop: "#00d4ff", Phone: "#ff6b6b", Tablet: "#51cf66" };
+const REGIONS = ["All", "North", "South", "East", "West"];
+const PRODUCTS = ["All", "Laptop", "Phone", "Tablet"];
+
+const fmt = (n) => n >= 1000 ? `₹${(n / 1000).toFixed(0)}K` : `₹${n}`;
+
+export default function Dashboard() {
+  const [region, setRegion] = useState("All");
+  const [product, setProduct] = useState("All");
+
+  const filtered = useMemo(() =>
+    rawData.filter(d =>
+      (region === "All" || d.region === region) &&
+      (product === "All" || d.product === product)
+    ), [region, product]);
+
+  const totalSales = filtered.reduce((s, d) => s + d.sales, 0);
+  const totalRevenue = filtered.reduce((s, d) => s + d.revenue, 0);
+  const totalUnits = filtered.reduce((s, d) => s + d.units, 0);
+  const avgRevenue = filtered.length ? Math.round(totalRevenue / filtered.length) : 0;
+
+  const productBreakdown = ["Laptop", "Phone", "Tablet"].map(p => ({
+    name: p,
+    value: rawData.filter(d => d.product === p).reduce((s, d) => s + d.revenue, 0),
+  }));
+
+  const topMonth = [...filtered].sort((a, b) => b.revenue - a.revenue)[0];
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#0a0e1a",
+      color: "#e8eaf0",
+      fontFamily: "'IBM Plex Mono', monospace",
+      padding: "24px",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Syne:wght@700;800&display=swap');
+        .filter-btn { background: #141824; border: 1px solid #2a3045; color: #8899bb; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 12px; transition: all 0.2s; }
+        .filter-btn.active { background: #00d4ff22; border-color: #00d4ff; color: #00d4ff; }
+        .filter-btn:hover { border-color: #4a5a80; color: #ccd; }
+        .card { background: #111827; border: 1px solid #1e2a3a; border-radius: 12px; padding: 20px; }
+        .kpi-card { background: linear-gradient(135deg, #111827 0%, #0d1520 100%); border: 1px solid #1e2a3a; border-radius: 12px; padding: 20px 24px; position: relative; overflow: hidden; }
+        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+        .kpi-sales::before { background: linear-gradient(90deg, #00d4ff, transparent); }
+        .kpi-rev::before { background: linear-gradient(90deg, #51cf66, transparent); }
+        .kpi-units::before { background: linear-gradient(90deg, #ff6b6b, transparent); }
+        .kpi-avg::before { background: linear-gradient(90deg, #ffd43b, transparent); }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+          <div style={{ width: 8, height: 32, background: "#00d4ff", borderRadius: 4 }} />
+          <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-0.5px" }}>
+            Sales & Revenue Dashboard
+          </h1>
+        </div>
+        <p style={{ color: "#556080", marginLeft: 20, fontSize: 13, margin: "4px 0 0 20px" }}>
+          Thiranex Internship · Data Analytics · FY 2026
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: "flex", gap: 24, marginBottom: 24, flexWrap: "wrap" }}>
+        <div>
+          <div style={{ fontSize: 11, color: "#556080", marginBottom: 8, letterSpacing: "0.08em" }}>REGION</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {REGIONS.map(r => (
+              <button key={r} className={`filter-btn ${region === r ? "active" : ""}`} onClick={() => setRegion(r)}>{r}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: "#556080", marginBottom: 8, letterSpacing: "0.08em" }}>PRODUCT</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {PRODUCTS.map(p => (
+              <button key={p} className={`filter-btn ${product === p ? "active" : ""}`} onClick={() => setProduct(p)}>{p}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
+        {[
+          { label: "Total Sales", value: fmt(totalSales), sub: `${filtered.length} months`, cls: "kpi-sales", color: "#00d4ff" },
+          { label: "Total Revenue", value: fmt(totalRevenue), sub: "Gross income", cls: "kpi-rev", color: "#51cf66" },
+          { label: "Units Sold", value: totalUnits.toLocaleString(), sub: "Across all products", cls: "kpi-units", color: "#ff6b6b" },
+          { label: "Avg Monthly Rev", value: fmt(avgRevenue), sub: topMonth ? `Peak: ${topMonth.month}` : "—", cls: "kpi-avg", color: "#ffd43b" },
+        ].map(({ label, value, sub, cls, color }) => (
+          <div key={label} className={`kpi-card ${cls}`}>
+            <div style={{ fontSize: 11, color: "#556080", letterSpacing: "0.1em", marginBottom: 8 }}>{label.toUpperCase()}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color, fontFamily: "'Syne', sans-serif" }}>{value}</div>
+            <div style={{ fontSize: 12, color: "#445066", marginTop: 4 }}>{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts Row 1 */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+        {/* Revenue Trend */}
+        <div className="card">
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#99aacc", marginBottom: 16 }}>📈 Revenue & Sales Trend</div>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={filtered}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e2a3a" />
+              <XAxis dataKey="month" tick={{ fill: "#556080", fontSize: 11 }} />
+              <YAxis tick={{ fill: "#556080", fontSize: 11 }} tickFormatter={v => `₹${v / 1000}K`} />
+              <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: "#141824", border: "1px solid #2a3045", borderRadius: 8, color: "#ccd" }} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey="revenue" stroke="#00d4ff" strokeWidth={2.5} dot={{ r: 3, fill: "#00d4ff" }} name="Revenue" />
+              <Line type="monotone" dataKey="sales" stroke="#51cf66" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: "#51cf66" }} name="Sales" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Product Revenue Pie */}
+        <div className="card">
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#99aacc", marginBottom: 16 }}>🥧 Revenue by Product</div>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={productBreakdown} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" nameKey="name" paddingAngle={3}>
+                {productBreakdown.map((entry) => (
+                  <Cell key={entry.name} fill={productColors[entry.name]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: "#141824", border: "1px solid #2a3045", borderRadius: 8, color: "#ccd" }} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Charts Row 2 */}
+      <div className="card">
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#99aacc", marginBottom: 16 }}>📊 Monthly Units Sold</div>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={filtered}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e2a3a" />
+            <XAxis dataKey="month" tick={{ fill: "#556080", fontSize: 11 }} />
+            <YAxis tick={{ fill: "#556080", fontSize: 11 }} />
+            <Tooltip contentStyle={{ background: "#141824", border: "1px solid #2a3045", borderRadius: 8, color: "#ccd" }} />
+            <Bar dataKey="units" name="Units Sold" radius={[4, 4, 0, 0]}>
+              {filtered.map((entry, i) => (
+                <Cell key={i} fill={productColors[entry.product]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+        <div style={{ display: "flex", gap: 16, marginTop: 10, justifyContent: "center" }}>
+          {Object.entries(productColors).map(([p, c]) => (
+            <div key={p} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#667799" }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: c }} /> {p}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: "#334" }}>
+        Built for Thiranex Internship · Sales & Revenue Analytics · 2026
+      </div>
+    </div>
+  );
+}
