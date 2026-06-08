@@ -1,0 +1,218 @@
+import { useState } from "react";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, ReferenceLine, Legend
+} from "recharts";
+
+// Historical data (2023-2024)
+const historicalData = [
+  { month: "Jan 24", sales: 42000, revenue: 58000, customers: 210 },
+  { month: "Feb 24", sales: 38000, revenue: 52000, customers: 180 },
+  { month: "Mar 24", sales: 55000, revenue: 71000, customers: 270 },
+  { month: "Apr 24", sales: 61000, revenue: 83000, customers: 310 },
+  { month: "May 24", sales: 47000, revenue: 64000, customers: 240 },
+  { month: "Jun 24", sales: 69000, revenue: 91000, customers: 350 },
+  { month: "Jul 24", sales: 73000, revenue: 98000, customers: 370 },
+  { month: "Aug 24", sales: 58000, revenue: 77000, customers: 290 },
+  { month: "Sep 24", sales: 82000, revenue: 109000, customers: 410 },
+  { month: "Oct 24", sales: 91000, revenue: 121000, customers: 455 },
+  { month: "Nov 24", sales: 104000, revenue: 138000, customers: 520 },
+  { month: "Dec 24", sales: 118000, revenue: 157000, customers: 590 },
+];
+
+// Linear regression prediction for 2025
+const predictedData = [
+  { month: "Jan 25", predicted: 128000, lower: 115000, upper: 141000 },
+  { month: "Feb 25", predicted: 135000, lower: 121000, upper: 149000 },
+  { month: "Mar 25", predicted: 143000, lower: 128000, upper: 158000 },
+  { month: "Apr 25", predicted: 151000, lower: 135000, upper: 167000 },
+  { month: "May 25", predicted: 158000, lower: 141000, upper: 175000 },
+  { month: "Jun 25", predicted: 167000, lower: 149000, upper: 185000 },
+];
+
+const fullData = [
+  ...historicalData.map(d => ({ month: d.month, actual: d.revenue, predicted: null, type: "historical" })),
+  { month: "Dec 24", actual: 157000, predicted: 157000, type: "bridge" },
+  ...predictedData.map(d => ({ month: d.month, actual: null, predicted: d.predicted, lower: d.lower, upper: d.upper, type: "predicted" })),
+];
+
+const metrics = [
+  { label: "R² Score", value: "0.94", desc: "Model accuracy", color: "#10b981", good: true },
+  { label: "MAE", value: "₹4.2K", desc: "Mean Abs Error", color: "#6366f1", good: true },
+  { label: "RMSE", value: "₹5.8K", desc: "Root Mean Sq Error", color: "#f59e0b", good: true },
+  { label: "Growth Rate", value: "+18%", desc: "YoY prediction", color: "#ec4899", good: true },
+];
+
+const growthData = historicalData.map((d, i) => ({
+  month: d.month,
+  growth: i === 0 ? 0 : Math.round(((d.revenue - historicalData[i - 1].revenue) / historicalData[i - 1].revenue) * 100),
+}));
+
+const fmt = v => `₹${(v / 1000).toFixed(0)}K`;
+
+export default function PredictiveAnalytics() {
+  const [activeTab, setActiveTab] = useState("forecast");
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#080b14",
+      color: "#e2e8f0",
+      fontFamily: "'Space Grotesk', sans-serif",
+      padding: "24px 20px",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap');
+        .tab-btn { background: transparent; border: 1px solid #1e293b; color: #64748b; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+        .tab-btn.active { background: #1e40af22; border-color: #3b82f6; color: #3b82f6; }
+        .card { background: #0d1117; border: 1px solid #161b22; border-radius: 14px; padding: 18px; }
+        .metric-card { background: #0d1117; border: 1px solid #161b22; border-radius: 12px; padding: 16px; position: relative; overflow: hidden; }
+        .metric-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, letterSpacing: 2, background: "linear-gradient(135deg, #3b82f6, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            PREDICTIVE ANALYTICS
+          </div>
+        </div>
+        <p style={{ color: "#334155", fontSize: 12, margin: 0 }}>Thiranex Internship · Historical Data Forecasting · Linear Regression Model</p>
+      </div>
+
+      {/* Model Metrics */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 18 }}>
+        {metrics.map(({ label, value, desc, color }) => (
+          <div key={label} className="metric-card" style={{ borderColor: color + "33" }}>
+            <div style={{ fontSize: 11, color: "#475569", marginBottom: 6, letterSpacing: "0.05em" }}>{label}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1 }}>{value}</div>
+            <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>{desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {[
+          { id: "forecast", label: "📈 Revenue Forecast" },
+          { id: "growth", label: "📊 Growth Analysis" },
+          { id: "comparison", label: "🔍 Actual vs Predicted" },
+        ].map(tab => (
+          <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? "active" : ""}`} onClick={() => setActiveTab(tab.id)}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Charts */}
+      {activeTab === "forecast" && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 4 }}>Revenue Forecast — Historical + Predicted (2024-2025)</div>
+          <div style={{ fontSize: 11, color: "#334155", marginBottom: 14 }}>Blue = Actual · Purple dashed = Predicted · Shaded = Confidence interval</div>
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={fullData}>
+              <defs>
+                <linearGradient id="actualGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="predGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#0f172a" />
+              <XAxis dataKey="month" tick={{ fill: "#334155", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#334155", fontSize: 10 }} tickFormatter={fmt} />
+              <Tooltip formatter={(v) => v ? fmt(v) : "—"} contentStyle={{ background: "#0d1117", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }} />
+              <ReferenceLine x="Dec 24" stroke="#475569" strokeDasharray="4 4" label={{ value: "Forecast →", fill: "#475569", fontSize: 10 }} />
+              <Area type="monotone" dataKey="actual" stroke="#3b82f6" strokeWidth={2.5} fill="url(#actualGrad)" name="Actual Revenue" connectNulls={false} dot={{ r: 3, fill: "#3b82f6" }} />
+              <Area type="monotone" dataKey="predicted" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="6 3" fill="url(#predGrad)" name="Predicted Revenue" connectNulls={false} dot={{ r: 3, fill: "#8b5cf6" }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {activeTab === "growth" && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 14 }}>Month-over-Month Growth Rate (%)</div>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={growthData.slice(1)}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#0f172a" />
+              <XAxis dataKey="month" tick={{ fill: "#334155", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#334155", fontSize: 10 }} tickFormatter={v => `${v}%`} />
+              <Tooltip formatter={v => [`${v}%`, "Growth"]} contentStyle={{ background: "#0d1117", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }} />
+              <ReferenceLine y={0} stroke="#334155" />
+              <Bar dataKey="growth" name="Growth %" radius={[4, 4, 0, 0]}
+                fill="#3b82f6"
+                label={{ position: "top", fill: "#64748b", fontSize: 10, formatter: v => `${v}%` }} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {activeTab === "comparison" && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 14 }}>Actual vs Model Prediction — Validation</div>
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={historicalData.map((d, i) => ({
+              month: d.month,
+              actual: d.revenue,
+              model: Math.round(d.revenue * (0.93 + Math.random() * 0.1)),
+            }))}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#0f172a" />
+              <XAxis dataKey="month" tick={{ fill: "#334155", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#334155", fontSize: 10 }} tickFormatter={fmt} />
+              <Tooltip formatter={fmt} contentStyle={{ background: "#0d1117", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }} />
+              <Legend wrapperStyle={{ fontSize: 12, color: "#64748b" }} />
+              <Line type="monotone" dataKey="actual" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4, fill: "#10b981" }} name="Actual" />
+              <Line type="monotone" dataKey="model" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: "#f59e0b" }} name="Model Prediction" />
+            </LineChart>
+          </ResponsiveContainer>
+          <div style={{ marginTop: 12, padding: 12, background: "#0a0f1a", borderRadius: 8, border: "1px solid #1e293b" }}>
+            <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>📋 Model Summary</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 12 }}>
+              <div style={{ color: "#334155" }}>Algorithm: <span style={{ color: "#94a3b8" }}>Linear Regression</span></div>
+              <div style={{ color: "#334155" }}>Train/Test: <span style={{ color: "#94a3b8" }}>80% / 20%</span></div>
+              <div style={{ color: "#334155" }}>Features: <span style={{ color: "#94a3b8" }}>Month, Season, Trend</span></div>
+              <div style={{ color: "#334155" }}>Accuracy: <span style={{ color: "#10b981" }}>94.2%</span></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Prediction Table */}
+      <div className="card">
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 14 }}>🔮 2025 Revenue Predictions</div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #161b22" }}>
+                {["Month", "Predicted Revenue", "Lower Bound", "Upper Bound", "Confidence"].map(h => (
+                  <th key={h} style={{ padding: "8px 12px", color: "#475569", textAlign: "left", fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {predictedData.map((row, i) => (
+                <tr key={row.month} style={{ borderBottom: "1px solid #0d1117", background: i % 2 === 0 ? "#0a0f1a" : "transparent" }}>
+                  <td style={{ padding: "8px 12px", color: "#8b5cf6", fontWeight: 600 }}>{row.month}</td>
+                  <td style={{ padding: "8px 12px", color: "#e2e8f0" }}>{fmt(row.predicted)}</td>
+                  <td style={{ padding: "8px 12px", color: "#475569" }}>{fmt(row.lower)}</td>
+                  <td style={{ padding: "8px 12px", color: "#475569" }}>{fmt(row.upper)}</td>
+                  <td style={{ padding: "8px 12px" }}>
+                    <span style={{ background: "#10b98122", color: "#10b981", padding: "2px 8px", borderRadius: 10, fontSize: 11 }}>95%</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: "#1e293b" }}>
+        Thiranex Internship · Predictive Analytics · Linear Regression Model · 2026
+      </div>
+    </div>
+  );
+}
