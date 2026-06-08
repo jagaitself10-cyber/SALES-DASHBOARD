@@ -1,0 +1,205 @@
+import { useState } from "react";
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend } from "recharts";
+
+const customers = [
+  { id: 1, name: "Arun", age: 25, income: 30000, spending: 15000, visits: 8, segment: "Regular" },
+  { id: 2, name: "Priya", age: 35, income: 80000, spending: 65000, visits: 20, segment: "Premium" },
+  { id: 3, name: "Kumar", age: 45, income: 20000, spending: 8000, visits: 3, segment: "Low" },
+  { id: 4, name: "Meena", age: 28, income: 55000, spending: 42000, visits: 15, segment: "Premium" },
+  { id: 5, name: "Ravi", age: 52, income: 15000, spending: 5000, visits: 2, segment: "Low" },
+  { id: 6, name: "Divya", age: 31, income: 45000, spending: 30000, visits: 12, segment: "Regular" },
+  { id: 7, name: "Vijay", age: 40, income: 90000, spending: 72000, visits: 25, segment: "Premium" },
+  { id: 8, name: "Lakshmi", age: 22, income: 25000, spending: 12000, visits: 6, segment: "Regular" },
+  { id: 9, name: "Suresh", age: 48, income: 12000, spending: 4000, visits: 1, segment: "Low" },
+  { id: 10, name: "Kavya", age: 33, income: 70000, spending: 58000, visits: 18, segment: "Premium" },
+  { id: 11, name: "Bala", age: 27, income: 38000, spending: 22000, visits: 9, segment: "Regular" },
+  { id: 12, name: "Nisha", age: 42, income: 18000, spending: 7000, visits: 3, segment: "Low" },
+  { id: 13, name: "Karthik", age: 29, income: 62000, spending: 48000, visits: 16, segment: "Premium" },
+  { id: 14, name: "Anitha", age: 36, income: 42000, spending: 28000, visits: 11, segment: "Regular" },
+  { id: 15, name: "Mohan", age: 55, income: 10000, spending: 3000, visits: 1, segment: "Low" },
+];
+
+const SEGMENT_COLORS = {
+  Premium: "#f59e0b",
+  Regular: "#10b981",
+  Low: "#ef4444",
+};
+
+const SEGMENT_DESC = {
+  Premium: "High income, high spending, frequent visits",
+  Regular: "Medium income, moderate spending",
+  Low: "Low income, minimal spending, rare visits",
+};
+
+const segmentCounts = ["Premium", "Regular", "Low"].map(s => ({
+  name: s,
+  value: customers.filter(c => c.segment === s).length,
+}));
+
+const ageBuckets = [
+  { range: "20-30", Premium: 0, Regular: 0, Low: 0 },
+  { range: "31-40", Premium: 0, Regular: 0, Low: 0 },
+  { range: "41-55", Premium: 0, Regular: 0, Low: 0 },
+];
+customers.forEach(c => {
+  const bucket = c.age <= 30 ? 0 : c.age <= 40 ? 1 : 2;
+  ageBuckets[bucket][c.segment]++;
+});
+
+export default function CustomerSegmentation() {
+  const [selected, setSelected] = useState(null);
+  const [filter, setFilter] = useState("All");
+
+  const filtered = filter === "All" ? customers : customers.filter(c => c.segment === filter);
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#0f0f13",
+      color: "#e2e8f0",
+      fontFamily: "'DM Sans', sans-serif",
+      padding: "28px 24px",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap');
+        .seg-btn { background: transparent; border: 1px solid #2d2d3a; color: #888; padding: 7px 16px; border-radius: 20px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; transition: all 0.2s; }
+        .seg-btn.active-Premium { background: #f59e0b22; border-color: #f59e0b; color: #f59e0b; }
+        .seg-btn.active-Regular { background: #10b98122; border-color: #10b981; color: #10b981; }
+        .seg-btn.active-Low { background: #ef444422; border-color: #ef4444; color: #ef4444; }
+        .seg-btn.active-All { background: #6366f122; border-color: #6366f1; color: #6366f1; }
+        .seg-btn:hover { border-color: #555; color: #ccc; }
+        .card { background: #16161f; border: 1px solid #1e1e2e; border-radius: 16px; padding: 20px; }
+        .customer-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 10px; margin-bottom: 6px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+        .customer-row:hover { background: #1e1e2e; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 900, margin: 0, background: "linear-gradient(90deg, #f59e0b, #10b981)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          Customer Segmentation
+        </h1>
+        <p style={{ color: "#555", fontSize: 13, margin: "4px 0 0" }}>Thiranex Internship · Behavior & Demographics Analysis</p>
+      </div>
+
+      {/* KPI Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+        {[
+          { label: "Premium", count: 4, color: "#f59e0b", icon: "👑" },
+          { label: "Regular", count: 5, color: "#10b981", icon: "✅" },
+          { label: "Low", count: 6, color: "#ef4444", icon: "📉" },
+        ].map(({ label, count, color, icon }) => (
+          <div key={label} className="card" style={{ borderColor: color + "33", textAlign: "center" }}>
+            <div style={{ fontSize: 24 }}>{icon}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'Playfair Display', serif" }}>{count}</div>
+            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{label} Customers</div>
+            <div style={{ fontSize: 11, color: "#444", marginTop: 4 }}>{SEGMENT_DESC[label].split(",")[0]}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Scatter Chart */}
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#aaa", marginBottom: 14 }}>📊 Income vs Spending — Customer Clusters</div>
+        <ResponsiveContainer width="100%" height={220}>
+          <ScatterChart>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
+            <XAxis dataKey="income" name="Income" tick={{ fill: "#555", fontSize: 11 }} tickFormatter={v => `₹${v/1000}K`} label={{ value: "Income", position: "insideBottom", offset: -2, fill: "#555", fontSize: 11 }} />
+            <YAxis dataKey="spending" name="Spending" tick={{ fill: "#555", fontSize: 11 }} tickFormatter={v => `₹${v/1000}K`} />
+            <Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={{ background: "#16161f", border: "1px solid #2d2d3a", borderRadius: 8, fontSize: 12 }}
+              formatter={(val, name) => [`₹${val.toLocaleString()}`, name]} />
+            {["Premium", "Regular", "Low"].map(seg => (
+              <Scatter key={seg} name={seg} data={customers.filter(c => c.segment === seg)}
+                fill={SEGMENT_COLORS[seg]} opacity={0.85} r={7} />
+            ))}
+          </ScatterChart>
+        </ResponsiveContainer>
+        <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 8 }}>
+          {["Premium", "Regular", "Low"].map(s => (
+            <div key={s} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#666" }}>
+              <span className="dot" style={{ background: SEGMENT_COLORS[s] }} />{s}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pie + Bar */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+        <div className="card">
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#aaa", marginBottom: 10 }}>🥧 Segment Distribution</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <PieChart>
+              <Pie data={segmentCounts} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value" paddingAngle={4}>
+                {segmentCounts.map(entry => (
+                  <Cell key={entry.name} fill={SEGMENT_COLORS[entry.name]} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ background: "#16161f", border: "1px solid #2d2d3a", borderRadius: 8, fontSize: 12 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="card">
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#aaa", marginBottom: 10 }}>📈 Age Group Analysis</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={ageBuckets} barSize={10}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
+              <XAxis dataKey="range" tick={{ fill: "#555", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#555", fontSize: 10 }} />
+              <Tooltip contentStyle={{ background: "#16161f", border: "1px solid #2d2d3a", borderRadius: 8, fontSize: 12 }} />
+              {["Premium", "Regular", "Low"].map(s => (
+                <Bar key={s} dataKey={s} fill={SEGMENT_COLORS[s]} radius={[3, 3, 0, 0]} />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Customer List */}
+      <div className="card">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#aaa" }}>👥 Customer List</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {["All", "Premium", "Regular", "Low"].map(s => (
+              <button key={s} className={`seg-btn ${filter === s ? `active-${s}` : ""}`} onClick={() => setFilter(s)}>{s}</button>
+            ))}
+          </div>
+        </div>
+        {filtered.map(c => (
+          <div key={c.id} className="customer-row"
+            style={{ background: selected?.id === c.id ? "#1e1e2e" : "transparent", borderColor: selected?.id === c.id ? SEGMENT_COLORS[c.segment] + "44" : "transparent" }}
+            onClick={() => setSelected(selected?.id === c.id ? null : c)}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: SEGMENT_COLORS[c.segment] + "33", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: SEGMENT_COLORS[c.segment] }}>
+                {c.name[0]}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</div>
+                <div style={{ fontSize: 11, color: "#555" }}>Age {c.age} · {c.visits} visits/mo</div>
+              </div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <span className="badge" style={{ background: SEGMENT_COLORS[c.segment] + "22", color: SEGMENT_COLORS[c.segment] }}>{c.segment}</span>
+              <div style={{ fontSize: 11, color: "#555", marginTop: 3 }}>₹{c.spending.toLocaleString()} spent</div>
+            </div>
+          </div>
+        ))}
+        {selected && (
+          <div style={{ marginTop: 12, padding: 14, background: "#0f0f13", borderRadius: 10, border: `1px solid ${SEGMENT_COLORS[selected.segment]}44` }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: SEGMENT_COLORS[selected.segment], marginBottom: 8 }}>📋 {selected.name} — Details</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12, color: "#888" }}>
+              <div>Age: <span style={{ color: "#ccc" }}>{selected.age}</span></div>
+              <div>Income: <span style={{ color: "#ccc" }}>₹{selected.income.toLocaleString()}</span></div>
+              <div>Spending: <span style={{ color: "#ccc" }}>₹{selected.spending.toLocaleString()}</span></div>
+              <div>Visits/mo: <span style={{ color: "#ccc" }}>{selected.visits}</span></div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: "#333" }}>
+        Thiranex Internship · Customer Segmentation · 2026
+      </div>
+    </div>
+  );
+}
